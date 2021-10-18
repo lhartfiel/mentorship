@@ -1,0 +1,12 @@
+{% extends 'mentorship/base.html' %}
+
+
+{% block body_content %}
+
+	<h1>FOLDIE Mentorship</h1>
+	{% for mentee in mentees %}
+		<h2>Mentee: {{ mentee.mentee.first_name }}</h2>
+		<div>mentor: {{ mentee.mentor }}</div>
+	{% endfor %}
+
+{% endblock %}
