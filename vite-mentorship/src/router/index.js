@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '/src/components/Home.vue'
-import Mentee from '/src/components/Mentee.vue'
-import MenteeLogin from '/src/components/MenteeLogin.vue'
-import MenteeSignup from '/src/components/MenteeSignup.vue'
-import Mentor from '/src/components/Mentor.vue'
-import MentorLogin from '/src/components/MentorLogin.vue'
-import MentorSignup from '/src/components/MentorSignup.vue'
+import Home from '/src/views//Home.vue'
+import Mentee from '/src/views/Mentee.vue'
+import MenteeLogin from '/src/views/MenteeLogin.vue'
+import MenteeSignup from '/src/views/MenteeSignup.vue'
+import Mentor from '/src/views/Mentor.vue'
+import MentorLogin from '/src/views/MentorLogin.vue'
+import MentorSignup from '/src/views/MentorSignup.vue'
 
 const routes = [
     {
