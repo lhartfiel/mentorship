@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-5(0wu4@&tq2iz6p!nn6i)lkee&%5_1al2e1)myy9)84p--5ni3'
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:8000",]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:8000", "http://0.0.0.0:8000"]
 
 
 
@@ -42,7 +42,7 @@ DATABASES = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '0.0.0.0', "http://localhost:3000", "http://localhost:8000",]
+ALLOWED_HOSTS = ['localhost', '0.0.0.0', '0.0.0.0:8000', "http://localhost:3000", "http://localhost:8000",]
 
 
 DJRICHTEXTFIELD_CONFIG = {
@@ -70,12 +70,48 @@ INSTALLED_APPS = [
 		'mentorusers',
     'progress',
     'graphene_django',
+    'graphql_auth',
+    'django_filters',
+
+    # refresh tokens are optional
+    'graphql_jwt.refresh_token.apps.RefreshTokenConfig',
 ]
 
 AUTH_USER_MODEL = 'mentorusers.MentorshipUser'
 
+AUTHENTICATION_BACKENDS = [
+    "graphql_auth.backends.GraphQLAuthBackend",
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 GRAPHENE = {
-    "SCHEMA": "mentorship.api_schema.schema"
+    "SCHEMA": "mentorship.api_schema.schema",
+    'MIDDLEWARE': [
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    ],
+}
+
+GRAPHQL_AUTH = {
+    'LOGIN_ALLOWED_FIELDS': ['email', 'username']
+}
+
+GRAPHQL_JWT = {
+    "JWT_VERIFY_EXPIRATION": True,
+
+    # optional
+    "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
+    "JWT_ALLOW_ANY_CLASSES": [
+        "graphql_auth.mutations.Register",
+        "graphql_auth.mutations.VerifyAccount",
+        "graphql_auth.mutations.ResendActivationEmail",
+        "graphql_auth.mutations.SendPasswordResetEmail",
+        "graphql_auth.mutations.PasswordReset",
+        "graphql_auth.mutations.ObtainJSONWebToken",
+        "graphql_auth.mutations.VerifyToken",
+        "graphql_auth.mutations.RefreshToken",
+        "graphql_auth.mutations.RevokeToken",
+        "graphql_auth.mutations.VerifySecondaryEmail",
+    ],
 }
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

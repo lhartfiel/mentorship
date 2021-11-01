@@ -12,6 +12,9 @@ class MentorshipUser(AbstractUser):
 	last_name = models.CharField(max_length=255, blank=True)
 	photo = models.ImageField(upload_to='user_photos')
 
+	USERNAME_FIELD = "username"  # e.g: "username", "email"
+	EMAIL_FIELD = "email"  # e.g: "email", "primary_email"
+
 	def __str__(self):
 		return self.first_name
 
