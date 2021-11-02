@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-5(0wu4@&tq2iz6p!nn6i)lkee&%5_1al2e1)myy9)84p--5ni3'
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:8000", "http://0.0.0.0:8000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:8000", "http://0.0.0.0:8000", "http://127.0.0.1"]
 
 
 
@@ -92,7 +92,10 @@ GRAPHENE = {
 }
 
 GRAPHQL_AUTH = {
-    'LOGIN_ALLOWED_FIELDS': ['email', 'username']
+    'LOGIN_ALLOWED_FIELDS': ['email', 'username'],
+    'REGISTER_MUTATION_FIELDS': ['first_name', 'email', 'username'],
+    'REGISTER_MUTATION_FIELDS_OPTIONAL': ['is_mentor', 'is_mentee'],
+    'SEND_ACTIVATION_EMAIL': False
 }
 
 GRAPHQL_JWT = {

@@ -30,7 +30,9 @@ class AuthMutation(graphene.ObjectType):
 	# eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImxoYXJ0ZmllbCIsImV4cCI6MTYzNTczNTE2MCwib3JpZ0lhdCI6MTYzNTczNDg2MH0.ketpFlYJJC2yiyI2bmK1FciSl8 - V0SH86suhkKL0Z1I
 
 class Mutation(AuthMutation, graphene.ObjectType):
-	pass
+	class Meta:
+		model = MentorshipUser
+		fields = '__all__'
 
 class ProgressType(DjangoObjectType):
 	class Meta:

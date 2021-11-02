@@ -16,7 +16,7 @@ class MentorshipUser(AbstractUser):
 	EMAIL_FIELD = "email"  # e.g: "email", "primary_email"
 
 	def __str__(self):
-		return self.first_name
+		return self.username
 
 
 class Mentee(models.Model):
