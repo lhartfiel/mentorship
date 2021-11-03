@@ -6,12 +6,21 @@ import MenteeSignup from '/src/views/MenteeSignup.vue'
 import Mentor from '/src/views/Mentor.vue'
 import MentorLogin from '/src/views/MentorLogin.vue'
 import MentorSignup from '/src/views/MentorSignup.vue'
+import Dashboard from '/src/views/Dashboard.vue'
 
 const routes = [
     {
         path: '/',
         name: 'Home',
         component: Home,
+    },
+
+     {
+        path: '/dashboard/user/:id',
+        name: 'Dashboard',
+        component: Dashboard,
+        props: true,
+        params: true
     },
     {
         path: '/mentee',

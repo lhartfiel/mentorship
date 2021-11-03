@@ -79,7 +79,7 @@
       mentorLoginSubmit(){
         const username = this.username
         const password = this.password
-        alert(username)
+        let self = this;
         axios({
             url: 'http://localhost:8000/graphql',
             method: 'post',
@@ -112,6 +112,7 @@
               this.submissionSuccess = true
               this.submissionMessage = `Thanks for logging in, ${response.data.data.tokenAuth.user.username}`
               this.displayMentorLoginForm = false
+              self.$router.push({path: `/dashboard/user/${response.data.data.tokenAuth.user.id}`, props: {username: response.data.data.tokenAuth.user.username}})
             }
           })
           .catch(function(error){
@@ -130,7 +131,6 @@
         const passwordConfirm = this.passwordConfirm
         const email = this.email
         const firstName = this.firstName
-        alert(username)
         axios({
             url: 'http://localhost:8000/graphql',
             method: 'post',
