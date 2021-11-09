@@ -24,7 +24,6 @@ class Mentee(models.Model):
 	mentor = models.ForeignKey("mentorusers.Mentor", null=True, on_delete=models.CASCADE, related_name='mentors')
 	session = models.ForeignKey("progress.Session", default=1, related_name="mentee_session", on_delete=models.CASCADE)
 
-
 	def __str__(self):
 		return f'{self.mentee.first_name}'
 

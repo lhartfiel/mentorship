@@ -4,7 +4,7 @@ from graphql_auth.schema import UserQuery, MeQuery
 from graphql_auth import mutations
 
 from mentorusers.models import MentorshipUser, Mentee
-from progress.models import Progress, Session
+from progress.models import Progress, Session, Accomplishment, Challenge
 
 
 class AuthMutation(graphene.ObjectType):
@@ -27,11 +27,15 @@ class AuthMutation(graphene.ObjectType):
 	refresh_token = mutations.RefreshToken.Field()
 	revoke_token = mutations.RevokeToken.Field()
 
-	# eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImxoYXJ0ZmllbCIsImV4cCI6MTYzNTczNTE2MCwib3JpZ0lhdCI6MTYzNTczNDg2MH0.ketpFlYJJC2yiyI2bmK1FciSl8 - V0SH86suhkKL0Z1I
 
-class Mutation(AuthMutation, graphene.ObjectType):
+class MentorshipUserType(DjangoObjectType):
 	class Meta:
 		model = MentorshipUser
+		fields = '__all__'
+
+class MenteeType(DjangoObjectType):
+	class Meta:
+		model = Mentee
 		fields = '__all__'
 
 class ProgressType(DjangoObjectType):
@@ -39,15 +43,14 @@ class ProgressType(DjangoObjectType):
 		model = Progress
 		fields = '__all__'
 
-class MentorshipUserType(DjangoObjectType):
+class AccomplishmentType(DjangoObjectType):
 	class Meta:
-		model = MentorshipUser
+		model = Accomplishment
 		fields = '__all__'
 
-
-class MenteeType(DjangoObjectType):
+class ChallengeType(DjangoObjectType):
 	class Meta:
-		model = Mentee
+		model = Challenge
 		fields = '__all__'
 
 class SessionType(DjangoObjectType):
@@ -55,6 +58,57 @@ class SessionType(DjangoObjectType):
 		model = Session
 		fields = '__all__'
 
+class SessionInput(graphene.InputObjectType):
+	date_session_start = graphene.DateTime(required=False)
+	date_session_end = graphene.DateTime(required=False)
+	name = graphene.String(required=False)
+
+class ProgressInput(graphene.InputObjectType):
+	comments = graphene.String(required=False)
+	# date_start = graphene.DateTime(required=True)
+	# date_end = graphene.DateTime(required=True)
+	# session = graphene.Field(SessionInput)
+	summary = graphene.String(required=False)
+	# user = MentorshipUserType
+
+class ChallengeInput(graphene.InputObjectType):
+	challenge = graphene.String(required=False)
+	progress = graphene.Field(ProgressInput)
+
+class AccomplishmentInput(graphene.InputObjectType):
+	accomplishment = graphene.String(required=False)
+	progress = graphene.Field(ProgressInput)
+
+class CreateProgressInput(graphene.Mutation):
+	class Arguments:
+		progress = ProgressInput(required=True)
+		challenge = ChallengeInput(required=False)
+		accomplishment = AccomplishmentInput(required=False)
+		session = SessionInput(required=False)
+
+	ok = graphene.Boolean()
+	progress = graphene.Field(ProgressType)
+	accomplishment = graphene.Field(AccomplishmentType)
+	challenge = graphene.Field(ChallengeType)
+	session = graphene.Field(SessionType)
+
+	@staticmethod
+	def mutate(root, info, progress, challenge, accomplishment):
+		ok=True
+		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=1)
+		progress.save()
+		accomplishment = Accomplishment.objects.create(accomplishment=accomplishment.accomplishment, progress_id=progress.id)
+		challenge = Challenge.objects.create(challenge=challenge.challenge, progress_id=progress.id)
+		accomplishment.save()
+		challenge.save()
+		return CreateProgressInput(progress=progress, challenge=challenge, accomplishment=accomplishment, ok=ok)
+
+class Mutation(AuthMutation, graphene.ObjectType):
+	create_progress_input = CreateProgressInput.Field()
+	# mentorship_user = MentorshipUserType.Field()
+	class Meta:
+		model = MentorshipUser
+		fields = '__all__'
 
 class Query(UserQuery, MeQuery, graphene.ObjectType):
 	all_progress = graphene.List(ProgressType)
@@ -85,11 +139,6 @@ class Query(UserQuery, MeQuery, graphene.ObjectType):
 			return Mentee.objects.filter(session__id=session)
 		except Mentee.DoesNotExist:
 			return
-
-
-
-class ProgressInput(graphene.InputObjectType):
-	pass
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
