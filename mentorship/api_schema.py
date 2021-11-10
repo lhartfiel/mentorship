@@ -65,8 +65,8 @@ class SessionInput(graphene.InputObjectType):
 
 class ProgressInput(graphene.InputObjectType):
 	comments = graphene.String(required=False)
-	# date_start = graphene.DateTime(required=True)
-	# date_end = graphene.DateTime(required=True)
+	date_start = graphene.DateTime(required=True)
+	date_end = graphene.DateTime(required=True)
 	# session = graphene.Field(SessionInput)
 	summary = graphene.String(required=False)
 	# user = MentorshipUserType
@@ -95,7 +95,8 @@ class CreateProgressInput(graphene.Mutation):
 	@staticmethod
 	def mutate(root, info, progress, challenge, accomplishment):
 		ok=True
-		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=1)
+		date = progress.date_start
+		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=1, date_start=progress.date_start, date_end=progress.date_end)
 		progress.save()
 		accomplishment = Accomplishment.objects.create(accomplishment=accomplishment.accomplishment, progress_id=progress.id)
 		challenge = Challenge.objects.create(challenge=challenge.challenge, progress_id=progress.id)
