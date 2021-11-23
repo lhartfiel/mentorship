@@ -4,6 +4,12 @@
       <button @click="mentorLoginForm" class="btn bg-red-500 text-white mr-3">Login</button>
       <button @click="mentorSignupForm" class="btn bg-green-700 text-white mr-3">Signup</button>
   </div>
+  Errors: {{ errors }}
+  <template v-if="errors.length > 0">
+    <div v-for="error in errors">
+      {{ error }}
+    </div>
+  </template>
   <form @submit="mentorLoginSubmit" method="post" v-if="displayMentorLoginForm" class="flex flex-wrap justify-content-center">
     <div class="mb-5 w-full flex flex-wrap">
       <label class="w-full block" for="username">Username:</label>
@@ -61,6 +67,7 @@
         displayMentorLoginForm: false,
         displayMentorSignupForm: false,
         email: '',
+        errors: [],
         firstName: '',
         password: '',
         passwordConfirm: '',
@@ -112,7 +119,10 @@
               this.submissionSuccess = true
               this.submissionMessage = `Thanks for logging in, ${response.data.data.tokenAuth.user.username}`
               this.displayMentorLoginForm = false
-              self.$router.push({path: `/dashboard/user/${response.data.data.tokenAuth.user.id}`, props: {username: response.data.data.tokenAuth.user.username}})
+              this.username = response.data.data.tokenAuth.user.username
+              console.log(this.username)
+              // self.$router.push({name: `/dashboard/user/${response.data.data.tokenAuth.user.username}`, props: {username: `${this.username}`, test: 'test'}})
+              self.$router.push({name: 'dashboard', params: {username: this.username, test: 'this is a test'}})
             }
           })
           .catch(function(error){
@@ -161,10 +171,11 @@
               this.submissionSuccess = true
               this.submissionMessage = `Thanks for signing up, ${this.username}`
               this.displayMentorSignupForm = false
+
             }
           })
-          .catch(function(error){
-            console.log(error.response)
+          .catch((error) => {
+            console.log( error.message)
           })
       },
     }

@@ -6,12 +6,16 @@
     <div class="progress" v-for="item in progress">
       <div class="b-shadow p-3 my-3">
         <p class="mb-4" v-if="item.dateStart">{{ dateFilter(item.dateStart) }} - {{ dateFilter(item.dateEnd) }}</p>
-        <p class="text-lg font-bold" v-if="item.comments">Comments:</p>
+        <p class="text-lg font-bold" v-if="item.accomplishment">Accomplishments:</p>
+        <ul class="accomplishments" v-for="accomplishment in item.accomplishment">
+          <li>{{ accomplishment.accomplishment }}</li>
+        </ul>
+        <p class="text-lg font-bold mt-4" v-if="item.comments">Comments:</p>
         <div class="comments" v-if="item.comments">
           <p>{{ item.comments }}</p>
         </div>
 
-        <div class="summary" v-if="item.summary">
+        <div class="summary mt-4 mb-4" v-if="item.summary">
           <p class="text-lg font-bold">Summary:</p>
           <p v-html="item.summary"></p>
         </div>
@@ -39,15 +43,27 @@
     </div>
     <p class="block w-full">Accomplishments:</p>
     <a href="#" class="bg-indigo-500 text-white flex m-auto p-3" @click.prevent="showAccomplishment">Add Accomplishment</a>
-    <div class="mb-5 w-full flex flex-wrap" v-if="addAccomplishment">
-      <label class="block w-full" for="accomplishment">Accomplishment</label>
-      <input class="block w-full" type="text" id="accomplishment" v-model="accomplishment">
+    <div class="mb-5 w-full flex flex-wrap" v-if="createAccomplishment">
+      <template v-for="(accomplishment, index) in accomplishments">
+        <label class="block w-full" for="accomplishment">Accomplishment</label>
+        <div class="flex nowrap w-full">
+          <input class="block w-full" type="text" id="accomplishment" v-model="accomplishment.accomplishment">
+          <a class="inputBtn" href="#"  @click.prevent="addAccomplishment"> + </a>
+          <a class="inputBtn" href="#" @click.prevent="removeAccomplishment(index)"> - </a>
+        </div>
+      </template>
     </div>
     <p class="block w-full">Challenges:</p>
     <a href="#" class="bg-indigo-500 text-white flex m-auto p-3" @click.prevent="showChallenge">Add Challenge</a>
-    <div class="mb-5 w-full flex flex-wrap" v-if="addChallenge">
-      <label class="block w-full" for="challenge">Challenge</label>
-      <input class="block w-full" type="text" id="challenge" v-model="challenge">
+    <div class="mb-5 w-full flex flex-wrap" v-if="createChallenge">
+      <template v-for="(challenge, index) in challenges">
+        <label class="block w-full" for="challenge">Challenge</label>
+         <div class="flex nowrap w-full">
+          <input class="block w-full" type="text" id="challenge" v-model="challenge.challenge">
+          <a class="inputBtn" href="#"  @click.prevent="addChallenge"> + </a>
+          <a class="inputBtn" href="#" @click.prevent="removeChallenge(index)"> - </a>
+         </div>
+      </template>
     </div>
     <a href="#" class="block w-full mt-3 mb-6 text-center btn bg-green-600 text-white text-center m-auto p-3" @click.prevent="submitProgress($event)">Submit</a>
   </form>
@@ -60,18 +76,21 @@ import moment from 'moment'
 export default {
   name: "Dashboard",
 
-  props: ['username'],
+  props: ['username', 'test'],
 
   data(){
     return {
       accomplishment: '',
-      addAccomplishment: false,
-      addChallenge: false,
+      accomplishments: [{'accomplishment': ''}],
+      createChallenge: false,
       challenge: '',
+      challenges: [{'challenge': ''}],
+      createAccomplishment: false,
       comment: '',
+      currentUser: this.username,
+      displayProgress: false,
       progress: [],
       summary: '',
-      displayProgress: false
     }
   },
 
@@ -83,7 +102,7 @@ export default {
         query:
           `
           {
-            allProgress {
+            allProgress(username: "${this.username}") {
               id
               summary
               comments
@@ -91,6 +110,9 @@ export default {
               dateEnd
               session {
                 id
+              }
+              accomplishment {
+                accomplishment
               }
             }
           }
@@ -107,6 +129,14 @@ export default {
   },
 
   methods: {
+    addAccomplishment(){
+      this.accomplishments.push({'accomplishment': ''})
+    },
+
+    addChallenge(){
+      this.challenges.push({'challenge': ''})
+    },
+
     addProgress(){
       this.displayProgress = !this.displayProgress
     },
@@ -116,14 +146,22 @@ export default {
       return moment(date).format('MMM Do, YYYY')
     },
 
+    removeAccomplishment(index){
+      this.accomplishments.splice(index,1)
+    },
+
+    removeChallenge(index){
+      this.challenges.splice(index,1)
+    },
+
     showAccomplishment(){
       this.displayProgress = true
-      this.addAccomplishment = !this.addAccomplishment
+      this.createAccomplishment = true
     },
 
     showChallenge(){
       this.displayProgress = true
-      this.addChallenge = !this.addChallenge
+      this.createChallenge = true
     },
 
     submitProgress(event){
@@ -131,7 +169,9 @@ export default {
       let summary = this.summary
       let accomplishment = this.accomplishment
       let challenge = this.challenge
+      let username = this.username
       let startDate = moment(this.startDate).format()
+      console.log(username)
       let endDate = moment(this.endDate).format()
       console.log(startDate)
 
@@ -141,7 +181,7 @@ export default {
         data: {
           query: `
             mutation {
-              createProgressInput(progress: {dateStart: "${startDate}", dateEnd: "${endDate}", comments: "${comment}", summary: "${summary}"}, challenge: {challenge: "${challenge}"}, accomplishment: {accomplishment: "${accomplishment}"}){
+              createProgressInput(progress: {dateStart: "${startDate}", dateEnd: "${endDate}", comments: "${comment}", summary: "${summary}"}, challenge: {challenge: "${challenge}"}, accomplishment: {accomplishment: "${accomplishment}"}, session: { name:"Session 1 - Fall 2021/Winter 2022", id: 1}, username: "${username}", ){
                 progress {
                   comments
                   summary
@@ -190,5 +230,10 @@ export default {
 
 .b-shadow {
   box-shadow: -1px 2px 15px -4px #BABABA;
+}
+
+.inputBtn {
+  font-size: 2rem;
+  padding: 12px;
 }
 </style>

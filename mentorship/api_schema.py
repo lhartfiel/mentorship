@@ -58,10 +58,20 @@ class SessionType(DjangoObjectType):
 		model = Session
 		fields = '__all__'
 
+class MentorshipUserInput(graphene.InputObjectType):
+	bio = graphene.String(help_text="Describe yourself -- hobbies, interests, coding career, etc.")
+	first_name = graphene.String(max_length=255, blank=False)
+	is_mentee = graphene.Boolean(default=False)
+	is_mentor = graphene.Boolean(default=False)
+	last_name = graphene.String(max_length=255, blank=True)
+	photo = graphene.String(upload_to='user_photos')
+
+
 class SessionInput(graphene.InputObjectType):
 	date_session_start = graphene.DateTime(required=False)
 	date_session_end = graphene.DateTime(required=False)
 	name = graphene.String(required=False)
+	id = graphene.Int()
 
 class ProgressInput(graphene.InputObjectType):
 	comments = graphene.String(required=False)
@@ -85,7 +95,9 @@ class CreateProgressInput(graphene.Mutation):
 		challenge = ChallengeInput(required=False)
 		accomplishment = AccomplishmentInput(required=False)
 		session = SessionInput(required=False)
+		username = graphene.String()
 
+	# Output Fields
 	ok = graphene.Boolean()
 	progress = graphene.Field(ProgressType)
 	accomplishment = graphene.Field(AccomplishmentType)
@@ -93,10 +105,10 @@ class CreateProgressInput(graphene.Mutation):
 	session = graphene.Field(SessionType)
 
 	@staticmethod
-	def mutate(root, info, progress, challenge, accomplishment):
+	def mutate(root, info, progress, challenge, accomplishment, session, username):
 		ok=True
-		date = progress.date_start
-		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=1, date_start=progress.date_start, date_end=progress.date_end)
+		user = MentorshipUser.objects.get(username__iexact=username)
+		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=session.id, user_id=user.id, date_start=progress.date_start, date_end=progress.date_end)
 		progress.save()
 		accomplishment = Accomplishment.objects.create(accomplishment=accomplishment.accomplishment, progress_id=progress.id)
 		challenge = Challenge.objects.create(challenge=challenge.challenge, progress_id=progress.id)
@@ -112,15 +124,15 @@ class Mutation(AuthMutation, graphene.ObjectType):
 		fields = '__all__'
 
 class Query(UserQuery, MeQuery, graphene.ObjectType):
-	all_progress = graphene.List(ProgressType)
+	all_progress = graphene.List(ProgressType, username=graphene.String())
 	all_users = graphene.List(MentorshipUserType)
 	all_sessions = graphene.List(SessionType)
 	all_mentees_by_session = graphene.List(MenteeType, session=graphene.ID())
 	all_mentors = graphene.List(MentorshipUserType)
 	all_mentees = graphene.List(MentorshipUserType)
 
-	def resolve_all_progress(root, info):
-		return Progress.objects.all()
+	def resolve_all_progress(root, info, username):
+		return Progress.objects.filter(user__username__iexact=username)
 
 	def resolve_all_users(root, info):
 		return MentorshipUser.objects.all()

@@ -37,27 +37,28 @@ class Mentor(models.Model):
 
 # Create a mentee when a new user is created and is_mentee is checked
 def create_mentee(sender, **kwargs):
-  instance = kwargs['instance']
-  try:
-	  mentee = Mentee.objects.get(mentee__id=instance.id)
-	  if mentee:
-		  return
-  except ObjectDoesNotExist:
-	  if instance.is_mentee:
-		  Mentee.objects.create(mentee=instance)
+	instance = kwargs['instance']
+	try:
+		mentee = Mentee.objects.get(mentee__id=instance.id)
+		if mentee:
+			return
+	except ObjectDoesNotExist:
+		if instance.is_mentee:
+			Mentee.objects.create(mentee=instance)
+
 
 # Create a mentor when a new user is created and is_mentor is checked
 def create_mentor(sender, **kwargs):
-  instance = kwargs['instance']
-  try:
-	  mentor = Mentor.objects.get(mentor__id=instance.id)
-	  if mentor:
-		  return
-  except ObjectDoesNotExist:
-	  if instance.is_mentor:
-		  Mentor.objects.create(mentor=instance)
-	  else:
-		  return
+	instance = kwargs['instance']
+	try:
+		mentor = Mentor.objects.get(mentor__id=instance.id)
+		if mentor:
+			return
+	except ObjectDoesNotExist:
+		if instance.is_mentor:
+			Mentor.objects.create(mentor=instance)
+		else:
+			return
 
 post_save.connect(create_mentee, sender=MentorshipUser)
 post_save.connect(create_mentor, sender=MentorshipUser)

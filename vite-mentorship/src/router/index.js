@@ -16,8 +16,8 @@ const routes = [
     },
 
      {
-        path: '/dashboard/user/:id',
-        name: 'Dashboard',
+        path: '/dashboard/user/:username',
+        name: 'dashboard',
         component: Dashboard,
         props: true,
         params: true
