@@ -120,6 +120,7 @@
               this.submissionMessage = `Thanks for logging in, ${response.data.data.tokenAuth.user.username}`
               this.displayMentorLoginForm = false
               this.username = response.data.data.tokenAuth.user.username
+              window.user = this.username
               console.log(this.username)
               // self.$router.push({name: `/dashboard/user/${response.data.data.tokenAuth.user.username}`, props: {username: `${this.username}`, test: 'test'}})
               self.$router.push({name: 'dashboard', params: {username: this.username, test: 'this is a test'}})
