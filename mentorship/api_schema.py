@@ -90,10 +90,29 @@ class AccomplishmentInput(graphene.InputObjectType):
 	accomplishment = graphene.String(required=False)
 	progress = graphene.Field(ProgressInput)
 
+class CreateSessionInput(graphene.Mutation):
+	class Arguments:
+		name = graphene.String(required=True)
+		date_session_start = graphene.DateTime(required=True)
+		date_session_end = graphene.DateTime(required=True)
+		# session = SessionInput(required=True)
+
+	# Output Fields
+	ok = graphene.Boolean()
+	session = graphene.Field(SessionType)
+
+	@staticmethod
+	def mutate(root, info, name, date_session_start, date_session_end):
+		ok = True
+		session = Session.objects.create(name=name, date_session_start=date_session_start, date_session_end=date_session_end)
+		session.save()
+		return CreateSessionInput(session=session, ok=ok)
+
+
 class CreateProgressInput(graphene.Mutation):
 	class Arguments:
 		progress = ProgressInput(required=True)
-		challenge = ChallengeInput(required=False)
+		challenges = graphene.List(ChallengeInput)
 		accomplishments = graphene.List(AccomplishmentInput)
 		session = SessionInput(required=False)
 		username = graphene.String()
@@ -106,7 +125,7 @@ class CreateProgressInput(graphene.Mutation):
 	session = graphene.Field(SessionType)
 
 	@staticmethod
-	def mutate(root, info, progress, challenge, accomplishments, session, username):
+	def mutate(root, info, progress, challenges, accomplishments, session, username):
 		ok=True
 		user = MentorshipUser.objects.get(username__iexact=username)
 		progress = Progress.objects.create(comments=progress.comments, summary=progress.summary, session_id=session.id, user_id=user.id, date_start=progress.date_start, date_end=progress.date_end)
@@ -114,17 +133,19 @@ class CreateProgressInput(graphene.Mutation):
 		for accomplishment in accomplishments:
 			accomplishment = Accomplishment.objects.create(accomplishment=accomplishment.accomplishment, progress_id=progress.id)
 			accomplishment.save()
-		# accomplishment = Accomplishment.objects.create(accomplishment=accomplishment.accomplishment, progress_id=progress.id)
-		challenge = Challenge.objects.create(challenge=challenge.challenge, progress_id=progress.id)
-		challenge.save()
-		return CreateProgressInput(progress=progress, challenge=challenge, accomplishment=accomplishments, ok=ok)
+		for challenge in challenges:
+			challenge = Challenge.objects.create(challenge=challenge.challenge, progress_id=progress.id)
+			challenge.save()
+		return CreateProgressInput(progress=progress, challenge=challenges, accomplishment=accomplishments, ok=ok)
 
 class Mutation(AuthMutation, graphene.ObjectType):
 	create_progress_input = CreateProgressInput.Field()
+	create_session_input = CreateSessionInput.Field()
+	# session_input = SessionInput.Field()
 	# mentorship_user = MentorshipUserType.Field()
-	class Meta:
-		model = MentorshipUser
-		fields = '__all__'
+	# class Meta:
+	# 	model = MentorshipUser
+	# 	fields = '__all__'
 
 class Query(UserQuery, MeQuery, graphene.ObjectType):
 	all_progress = graphene.List(ProgressType, username=graphene.String(), session_id=graphene.ID())

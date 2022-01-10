@@ -11,6 +11,21 @@
         </router-link>
       </div>
     </div>
+    <a href="#" class="block mb-8" @click.prevent="addSession">Add Session +</a>
+    <form @submit="createProgressInput" method="post" v-if="displayProgress" class="flex flex-wrap content-center">
+    <div class="mb-5 w-full flex flex-wrap">
+      <label class="block w-full" for="summary">Session Name</label>
+      <input class="block w-full" type="textarea" id="summary" v-model="name">
+    </div>
+    <div class="mb-5 w-full flex flex-wrap">
+      <label class="block w-full" for="startDate">Session Start Date</label>
+      <input class="block w-full" type="date" id="startDate" v-model="startDate">
+    </div>
+    <div class="mb-5 w-full flex flex-wrap">
+      <label class="block w-full" for="startDate">Session End Date</label>
+      <input class="block w-full" type="date" id="startDate" v-model="endDate">
+    </div>
+    </form>
   </div>
 
 </template>
@@ -27,6 +42,7 @@ export default {
   data(){
     return {
       currentUser: this.username,
+      displayProgress: false,
       loggedInUser: '',
       sessions: [],
     }
@@ -62,6 +78,10 @@ export default {
   },
 
   methods: {
+    addSession(){
+      this.displayProgress = !this.displayProgress
+    },
+
     dateFilter(value) {
       let date = value
       return moment(date).format('MMM Do, YYYY')

@@ -1,7 +1,6 @@
 <template>
   <div class="container max-w-screen-md m-auto">
     <h2 class="text-4xl">Current Progress for {{ session_name }}:</h2>
-
     <div class="progress" v-for="item in allProgress">
       <div class="b-shadow p-3 my-3">
         <p class="mb-4" v-if="item.dateStart">{{ dateFilter(item.dateStart) }} - {{ dateFilter(item.dateEnd) }}</p>
@@ -22,7 +21,7 @@
     </div>
 
     <a href="#" class="block mb-8" @click.prevent="addProgress">Add Progress +</a>
-    <form @submit="submitProgress" method="post" v-if="displayProgress" class="flex flex-wrap content-center">
+    <form @submit="createProgressInput" method="post" v-if="displayProgress" class="flex flex-wrap content-center">
     <div class="mb-5 w-full flex flex-wrap">
       <label class="block w-full" for="comment">Comments</label>
       <input class="block w-full" type="textarea" id="comment" name="comment" v-model="comment">
@@ -63,7 +62,7 @@
          </div>
       </template>
     </div>
-    <a href="#" class="block w-full mt-3 mb-6 text-center btn bg-green-600 text-white text-center m-auto p-3" @click.prevent="submitProgress($event)">Submit</a>
+    <a href="#" class="block w-full mt-3 mb-6 text-center btn bg-green-600 text-white text-center m-auto p-3" @click.prevent="createProgressInput($event)">Submit</a>
   </form>
   </div>
 
@@ -74,6 +73,59 @@
 import axios from "axios";
 import moment from "moment";
 import gql from 'graphql-tag';
+
+const GET_PROGRESS = gql`query allProgress($username: String!, $sessionId: ID!){
+    allProgress(username: $username, sessionId: $sessionId) {
+      id
+      summary
+      comments
+      dateStart
+      dateEnd
+      session {
+        id
+        name
+        dateSessionStart
+        dateSessionEnd
+      }
+      accomplishment {
+        accomplishment
+      }
+    }
+  }`
+
+const ADD_PROGRESS = gql`mutation ($comments: String!, $summary: String!, $username: String!, $startDate: DateTime!, $endDate: DateTime!, $challenges: [ChallengeInput], $accomplishments: [AccomplishmentInput]){
+  createProgressInput(progress: {dateStart: $startDate, dateEnd: $endDate, comments: $comments, summary: $summary}, challenges: $challenges, accomplishments: $accomplishments, session: { name:"Session 1 - Fall 2021/Winter 2022", id: 1}, username: $username){
+    progress {
+      comments
+      summary
+      id,
+      dateStart,
+      dateEnd,
+      challenge {
+        challenge
+        id
+        progress {
+          id
+        }
+      }
+      accomplishment {
+        accomplishment
+        id
+        progress {
+          id
+        }
+      }
+      session {
+        id
+        name
+        dateSessionStart
+        dateSessionEnd
+      }
+    }
+    ok
+  }
+}`;
+
 
 export default {
 
@@ -87,13 +139,13 @@ export default {
       accomplishments: [{accomplishment: ''}],
       createChallenge: false,
       challenge: '',
-      challenges: [{'challenge': ''}],
+      challenges: [{challenge: ''}],
       createAccomplishment: false,
       comment: '',
       currentUser: this.username,
       displayProgress: false,
       loggedInUser: '',
-      // allProgress: [],
+      allProgress: [],
       sessions: [],
       sessionId: parseInt(this.id),
       summary: '',
@@ -102,69 +154,19 @@ export default {
 
   apollo: {
     allProgress: {
-      query: gql`query allProgress($username: String!, $sessionId: ID!){
-        allProgress(username: $username, sessionId: $sessionId) {
-          id
-          summary
-          comments
-          dateStart
-          dateEnd
-          session {
-            id
-          }
-          accomplishment {
-            accomplishment
-          }
-        }
-      }`,
+      query: GET_PROGRESS,
       variables() {
-         console.log(this.sessionId)
+        console.log(this.sessionId)
         return {
           username: this.username,
           sessionId: this.sessionId
         }
       },
-    }
-    // update: data => data.allProgress
+    },
   },
 
   created() {
 
-
-
-
-    // axios({
-    //   url: 'http://localhost:8000/graphql',
-    //   method: 'post',
-    //   data: {
-    //     query:
-    //         `
-    //       {
-    //         allProgress(username: "${this.username}", sessionId: "${this.sessionId}") {
-    //             id
-    //             summary
-    //             comments
-    //             dateStart
-    //             dateEnd
-    //             session {
-    //               id
-    //             }
-    //             accomplishment {
-    //               accomplishment
-    //             }
-    //           }
-    //         }
-    //       `
-    //   }
-    // })
-    // .then((response) => {
-    //   console.log(response.data)
-    //   this.progress = response.data.data.allProgress
-    //   // this.loggedInUser = response.data.data.userAccess
-    // })
-    // .catch(function (error) {
-    //   console.log(error.response)
-    // })
   },
 
   methods: {
@@ -203,101 +205,85 @@ export default {
       this.createChallenge = true
     },
 
-    submitProgress(event){
-      let comment = this.comment
-      let summary = this.summary
-      let accomplishments = this.accomplishments
-      let challenges = this.challenges
-      let username = this.username
-      let startDate = moment(this.startDate).format()
-      let endDate = moment(this.endDate).format()
-      let axiosConfig = {
-        headers: {
-            'Content-Type': 'application/graphql',
+    createProgressInput(event){
+      this.$apollo.mutate({
+        mutation: ADD_PROGRESS,
+        variables: {
+          comments: this.comment,
+          summary: this.summary,
+          accomplishments: this.accomplishments,
+          challenges: this.challenges,
+          username: this.username,
+          startDate: moment(this.startDate).format(),
+          endDate: moment(this.endDate).format(),
+        },
+        update: (cache, result) => {
+          // the new post returned from the server
+          let newProgress = result.data.createProgressInput.progress
+          console.log(typeof(newProgress.id))
+          // an "identification" needed to locate the right data in the cache
+          let cacheId = {
+            query: GET_PROGRESS,
+            variables: { username: this.username, sessionId: this.sessionId },
+          }
+
+          // get the cached data
+          const data = cache.readQuery(cacheId)
+
+          const newData = [ ...data.allProgress, newProgress ]
+
+          // update the cache with the new data
+          cache.writeQuery({
+            ...cacheId,
+            data: { allProgress: newData }
+          })
+        },
+        optimisticResponse: {
+          __typename: 'Mutation',
+          createProgressInput: {
+            __typename: 'CreateProgressInput',
+            ok: true,
+            progress: {
+              comments: this.comment,
+              summary: this.summary,
+              challenge: {
+                challenge: this.challenge,
+                id: "challenge-",
+                progress: {
+                  id: this.id
+                }
+              },
+              accomplishment: {
+                accomplishment: this.accomplishment,
+                id: "accomplishment-",
+                progress: {
+                  id: this.id
+                }
+              },
+              session: {
+                id: this.allProgress[0].session.id,
+                name: this.allProgress[0].session.name,
+                dateSessionStart: this.allProgress[0].session.dateSessionStart,
+                dateSessionEnd: this.allProgress[0].session.dateSessionEnd
+              },
+              username: this.username,
+              dateStart: moment(this.startDate).format(),
+              dateEnd: moment(this.endDate).format(),
+              id: this.id,
+            },
+            id: 'xyz-?',
+          },
         }
-      };
-
-      // apollo: {
-      //   gql `
-      //       mutation {
-      //         createProgressInput(progress: {dateStart: "${startDate}", dateEnd: "${endDate}", comments: "${comment}", summary: "${summary}"}, challenge: {challenge: "${challenges}"}, accomplishments: ${JSON.stringify(accomplishments)}, session: { name:"Session 1 - Fall 2021/Winter 2022", id: 1}, username: "${username}"){
-      //           progress {
-      //             comments
-      //             summary
-      //             id
-      //             challenge {
-      //               challenge
-      //               id
-      //               progress {
-      //                 id
-      //               }
-      //             }
-      //             accomplishment {
-      //               accomplishment
-      //               id
-      //               progress {
-      //                 id
-      //               }
-      //             }
-      //             session {
-      //               name
-      //               dateSessionStart
-      //               dateSessionEnd
-      //             }
-      //           }
-      //           ok
-      //         }
-      //       }
-      //     `
-      // }
-
-      // TODO: Use Apollo to properly pass objects
-      // axios({
-      //   url: 'http://localhost:8000/graphql',
-      //   method: 'post',
-      //   data: {
-      //     query: `
-      //       mutation {
-      //         createProgressInput(progress: {dateStart: "${startDate}", dateEnd: "${endDate}", comments: "${comment}", summary: "${summary}"}, challenge: {challenge: "${challenges}"}, accomplishments: ${JSON.stringify(accomplishments)}, session: { name:"Session 1 - Fall 2021/Winter 2022", id: 1}, username: "${username}"){
-      //           progress {
-      //             comments
-      //             summary
-      //             id
-      //             challenge {
-      //               challenge
-      //               id
-      //               progress {
-      //                 id
-      //               }
-      //             }
-      //             accomplishment {
-      //               accomplishment
-      //               id
-      //               progress {
-      //                 id
-      //               }
-      //             }
-      //             session {
-      //               name
-      //               dateSessionStart
-      //               dateSessionEnd
-      //             }
-      //           }
-      //           ok
-      //         }
-      //       }
-      //     `
-      //   },
-      //   axiosConfig
-      // })
-      // .then((response) => {
-      //   console.log(response.data)
-      //   console.log(response.data.ok)
-      //   this.displayProgress = !this.displayProgress
-      // })
-      // .catch(function(error){
-      //   console.log(error.response)
-      // })
+      }).then((data) => {
+        // Result
+        this.displayProgress = false
+        console.log(data)
+      }).catch((error) => {
+        // Error
+        console.log(error.clientErrors)
+        console.log(error.message)
+        console.log(error.extraInfo)
+      })
     }
   }
 }
