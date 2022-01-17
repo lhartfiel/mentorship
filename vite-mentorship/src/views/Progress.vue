@@ -69,8 +69,6 @@
 </template>
 
 <script>
-
-import axios from "axios";
 import moment from "moment";
 import gql from 'graphql-tag';
 
