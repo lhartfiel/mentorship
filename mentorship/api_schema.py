@@ -1,5 +1,6 @@
 import graphene
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from graphene_django import DjangoObjectType, DjangoListField
 from graphql_auth.schema import UserQuery, MeQuery
 from graphql_auth import mutations
@@ -57,7 +58,7 @@ class ChallengeType(DjangoObjectType):
 class SessionType(DjangoObjectType):
 	class Meta:
 		model = Session
-		fields = '__all__'
+		fields = ['name', 'date_session_start', 'date_session_end', 'id']
 
 class MentorshipUserInput(graphene.InputObjectType):
 	bio = graphene.String(help_text="Describe yourself -- hobbies, interests, coding career, etc.")
@@ -92,21 +93,42 @@ class AccomplishmentInput(graphene.InputObjectType):
 
 class CreateSessionInput(graphene.Mutation):
 	class Arguments:
-		name = graphene.String(required=True)
-		date_session_start = graphene.DateTime(required=True)
-		date_session_end = graphene.DateTime(required=True)
-		# session = SessionInput(required=True)
+		# name = graphene.String(required=True)
+		# date_session_start = graphene.DateTime(required=True)
+		# date_session_end = graphene.DateTime(required=True)
+		session = SessionInput(required=True)
 
 	# Output Fields
 	ok = graphene.Boolean()
 	session = graphene.Field(SessionType)
 
 	@staticmethod
-	def mutate(root, info, name, date_session_start, date_session_end):
+	# def mutate(root, info, name, date_session_start, date_session_end):
+	# 	ok = True
+	# 	session = Session.objects.create(name=name, date_session_start=date_session_start, date_session_end=date_session_end)
+	# 	session.save()
+	# 	return CreateSessionInput(session=session, ok=ok)
+
+	def mutate(root, info, session):
 		ok = True
-		session = Session.objects.create(name=name, date_session_start=date_session_start, date_session_end=date_session_end)
-		session.save()
-		return CreateSessionInput(session=session, ok=ok)
+		try:
+			current_session = Session.objects.get(id=session.id)
+			name = session.name
+			date_session_start = session.date_session_start
+			date_session_end = session.date_session_end
+			current_session.name = name
+			current_session.date_session_start = date_session_start
+			current_session.date_session_end = date_session_end
+			current_session.save()
+			# session = Session.objects.update_or_create(
+			# 	id=session_id,
+			# 	defaults={id: session_id, name: name, date_session_start: date_session_start, date_session_end: date_session_end }
+			# )
+			return CreateSessionInput(session=session, ok=ok)
+		except Session.DoesNotExist:
+			session = Session.objects.create(name=session.name, date_session_start=session.date_session_start, date_session_end=session.date_session_end)
+			session.save()
+			return CreateSessionInput(session=session, ok=ok)
 
 
 class CreateProgressInput(graphene.Mutation):
