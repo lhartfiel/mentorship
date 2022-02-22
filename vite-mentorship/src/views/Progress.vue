@@ -18,6 +18,12 @@
           <p v-html="item.summary"></p>
         </div>
       </div>
+      <div class="links flex">
+        <a  class="px-6 bg-edit flex items-center"><img class="icon " :src=editIcon alt="Edit Icon"></a>
+        <router-link class="px-6 flex items-center bg-arrow" :to="{ name: 'progress', params: { username: username, session_name: session_name }}">
+          <img class="icon" :src=arrowRightIcon alt="Right Arrow Icon">
+        </router-link>
+      </div>
     </div>
 
     <a href="#" class="block mb-8" @click.prevent="addProgress">Add Progress +</a>
@@ -71,6 +77,8 @@
 <script>
 import moment from "moment";
 import gql from 'graphql-tag';
+import Edit from "../../icons/edit-solid.svg";
+import ArrowRight from "../../icons/arrow-right-solid.svg";
 
 const GET_PROGRESS = gql`query allProgress($username: String!, $sessionId: ID!){
     allProgress(username: $username, sessionId: $sessionId) {
@@ -91,8 +99,8 @@ const GET_PROGRESS = gql`query allProgress($username: String!, $sessionId: ID!){
     }
   }`
 
-const ADD_PROGRESS = gql`mutation ($comments: String!, $summary: String!, $username: String!, $startDate: DateTime!, $endDate: DateTime!, $challenges: [ChallengeInput], $accomplishments: [AccomplishmentInput]){
-  createProgressInput(progress: {dateStart: $startDate, dateEnd: $endDate, comments: $comments, summary: $summary}, challenges: $challenges, accomplishments: $accomplishments, session: { name:"Session 1 - Fall 2021/Winter 2022", id: 1}, username: $username){
+const ADD_PROGRESS = gql`mutation ($comments: String!, $summary: String!, $username: String!, $startDate: DateTime!, $endDate: DateTime!, $challenges: [ChallengeInput], $accomplishments: [AccomplishmentInput], $sessionId: Int, $sessionName: String){
+  createProgressInput(progress: {dateStart: $startDate, dateEnd: $endDate, comments: $comments, summary: $summary}, challenges: $challenges, accomplishments: $accomplishments, session: {name: $sessionName, id: $sessionId}, username: $username){
     progress {
       comments
       summary
@@ -135,6 +143,7 @@ export default {
     return {
       accomplishment: '',
       accomplishments: [{accomplishment: ''}],
+      arrowRightIcon: ArrowRight,
       createChallenge: false,
       challenge: '',
       challenges: [{challenge: ''}],
@@ -142,6 +151,7 @@ export default {
       comment: '',
       currentUser: this.username,
       displayProgress: false,
+      editIcon: Edit,
       loggedInUser: '',
       allProgress: [],
       sessions: [],
@@ -154,7 +164,6 @@ export default {
     allProgress: {
       query: GET_PROGRESS,
       variables() {
-        console.log(this.sessionId)
         return {
           username: this.username,
           sessionId: this.sessionId
@@ -214,11 +223,14 @@ export default {
           username: this.username,
           startDate: moment(this.startDate).format(),
           endDate: moment(this.endDate).format(),
+          sessionName: this.session_name,
+          sessionId: this.sessionId
         },
         update: (cache, result) => {
           // the new post returned from the server
           let newProgress = result.data.createProgressInput.progress
-          console.log(typeof(newProgress.id))
+          console.log("new")
+          console.log(newProgress)
           // an "identification" needed to locate the right data in the cache
           let cacheId = {
             query: GET_PROGRESS,
@@ -236,45 +248,46 @@ export default {
             data: { allProgress: newData }
           })
         },
-        optimisticResponse: {
-          __typename: 'Mutation',
-          createProgressInput: {
-            __typename: 'CreateProgressInput',
-            ok: true,
-            progress: {
-              comments: this.comment,
-              summary: this.summary,
-              challenge: {
-                challenge: this.challenge,
-                id: "challenge-",
-                progress: {
-                  id: this.id
-                }
-              },
-              accomplishment: {
-                accomplishment: this.accomplishment,
-                id: "accomplishment-",
-                progress: {
-                  id: this.id
-                }
-              },
-              session: {
-                id: this.allProgress[0].session.id,
-                name: this.allProgress[0].session.name,
-                dateSessionStart: this.allProgress[0].session.dateSessionStart,
-                dateSessionEnd: this.allProgress[0].session.dateSessionEnd
-              },
-              username: this.username,
-              dateStart: moment(this.startDate).format(),
-              dateEnd: moment(this.endDate).format(),
-              id: this.id,
-            },
-            id: 'xyz-?',
-          },
-        }
+        // optimisticResponse: {
+        //   __typename: 'Mutation',
+        //   createProgressInput: {
+        //     __typename: 'CreateProgressInput',
+        //     ok: true,
+        //     progress: {
+        //       comments: this.comment,
+        //       summary: this.summary,
+        //       challenge: {
+        //         challenge: this.challenge,
+        //         id: "challenge-",
+        //         progress: {
+        //           id: this.id
+        //         }
+        //       },
+        //       accomplishment: {
+        //         accomplishment: this.accomplishment,
+        //         id: "accomplishment-",
+        //         progress: {
+        //           id: this.id
+        //         }
+        //       },
+        //       session: {
+        //         // id: this.allProgress[0].session.id,
+        //         // name: this.allProgress[0].session.name,
+        //         // dateSessionStart: this.allProgress[0].session.dateSessionStart,
+        //         // dateSessionEnd: this.allProgress[0].session.dateSessionEnd
+        //       },
+        //       username: this.username,
+        //       dateStart: moment(this.startDate).format(),
+        //       dateEnd: moment(this.endDate).format(),
+        //       id: this.id,
+        //     },
+        //     id: 'xyz-?',
+        //   },
+        // }
       }).then((data) => {
         // Result
         this.displayProgress = false
+        console.log("data")
         console.log(data)
       }).catch((error) => {
         // Error

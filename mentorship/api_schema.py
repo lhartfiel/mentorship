@@ -124,7 +124,7 @@ class CreateSessionInput(graphene.Mutation):
 			# 	id=session_id,
 			# 	defaults={id: session_id, name: name, date_session_start: date_session_start, date_session_end: date_session_end }
 			# )
-			return CreateSessionInput(session=session, ok=ok)
+			# return CreateSessionInput(session=session, ok=ok)
 		except Session.DoesNotExist:
 			session = Session.objects.create(name=session.name, date_session_start=session.date_session_start, date_session_end=session.date_session_end)
 			session.save()
